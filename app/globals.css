@@ -142,3 +142,12 @@ body::after {
 ::selection {
   @apply bg-indigo-500/20 text-indigo-600 dark:text-indigo-300;
 }
+
+@keyframes liquid {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
