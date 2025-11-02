@@ -1,10 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -12,15 +22,31 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { toast } from "sonner";
+import { signUpUser } from "@/server/users";
+
+// Full validation including password confirmation
+const formSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export default function SignUpPage() {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -30,20 +56,28 @@ export default function SignUpPage() {
 
   const isDark = theme === "dark";
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    console.log("Signup attempted with:", { name, email, password });
+    try {
+      // Optionally, call your real sign-up function here:
+      const result = await signUpUser(data.email, data.password, data.name);
+      if (!result?.success) throw new Error(result?.message);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      toast.success("Account created successfully!");
+      // Optionally, redirect or update state here
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to create account.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInvalid = () => {
+    toast.error("Please fix the highlighted errors.");
   };
 
   const handleSocialSignup = (provider: string) => {
-    console.log(`[v0] Social signup with: ${provider}`);
+    toast(`Social signup with ${provider} coming soon!`);
   };
 
   return (
@@ -63,7 +97,6 @@ export default function SignUpPage() {
             : "0 32px 80px rgba(0, 0, 0, 0.2), inset 0 3px 0 rgba(255,255,255,0.6)",
         }}
       >
-        {/* ✨ Liquid shimmer layer */}
         <div className="absolute inset-0 animate-[liquid_6s_infinite_linear] bg-[linear-gradient(120deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.05)_40%,transparent_100%)] opacity-60 pointer-events-none" />
 
         <CardHeader className="text-center space-y-2 relative z-10">
@@ -76,115 +109,147 @@ export default function SignUpPage() {
         </CardHeader>
 
         <CardContent className="space-y-6 relative z-10">
-          {/* 📝 Signup Form */}
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="name"
-                className="text-sm font-medium text-card-foreground font-sans"
-              >
-                Full Name
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
-                  isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
-                } transition-all duration-200`}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium text-card-foreground font-sans"
-              >
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
-                  isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
-                } transition-all duration-200`}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-sm font-medium text-card-foreground font-sans"
-              >
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Create a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
-                  isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
-                } transition-all duration-200`}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="confirm-password"
-                className="text-sm font-medium text-card-foreground font-sans"
-              >
-                Confirm Password
-              </Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
-                  isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
-                } transition-all duration-200`}
-                required
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full font-sans font-bold py-5 transition-all duration-300 hover:scale-[1.02]"
-              style={{
-                backgroundColor: isDark ? "#7C3AED" : "#7C3AED",
-                color: "white",
-              }}
-              disabled={isLoading}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit, handleInvalid)}
+              className="space-y-4"
+              noValidate
             >
-              {isLoading ? "Creating Account..." : "Sign Up"}
-            </Button>
-          </form>
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Enter your name"
+                        className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
+                          isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
+                        } transition-all duration-200 ${
+                          form.formState.errors.name
+                            ? "border-red-500 ring-red-500 focus:ring-red-500"
+                            : ""
+                        }`}
+                        {...field}
+                        aria-invalid={!!form.formState.errors.name}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          {/* 🌈 Divider */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="Enter your email"
+                        className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
+                          isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
+                        } transition-all duration-200 ${
+                          form.formState.errors.email
+                            ? "border-red-500 ring-red-500 focus:ring-red-500"
+                            : ""
+                        }`}
+                        {...field}
+                        aria-invalid={!!form.formState.errors.email}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Create a password"
+                        className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
+                          isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
+                        } transition-all duration-200 ${
+                          form.formState.errors.password
+                            ? "border-red-500 ring-red-500 focus:ring-red-500"
+                            : ""
+                        }`}
+                        {...field}
+                        aria-invalid={!!form.formState.errors.password}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        placeholder="Confirm your password"
+                        className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
+                          isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
+                        } transition-all duration-200 ${
+                          form.formState.errors.confirmPassword
+                            ? "border-red-500 ring-red-500 focus:ring-red-500"
+                            : ""
+                        }`}
+                        {...field}
+                        aria-invalid={!!form.formState.errors.confirmPassword}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="w-full font-sans font-bold py-5 transition-all duration-300 hover:scale-[1.02]"
+                style={{
+                  backgroundColor: isDark ? "#7C3AED" : "#7C3AED",
+                  color: "white",
+                }}
+                disabled={isLoading}
+              >
+                {isLoading ? "Creating Account..." : "Sign Up"}
+              </Button>
+            </form>
+          </Form>
+
           <div className="relative flex justify-center text-xs uppercase">
             <span className="px-2 text-card-foreground/60 font-sans">
               Or sign up with
             </span>
           </div>
 
-          {/* ☁️ Social Signup Buttons */}
           <div className="space-y-3">
             <Button
               variant="outline"
               onClick={() => handleSocialSignup("Google")}
               className="w-full glass-effect border-white/30 text-card-foreground hover:bg-white/20 font-sans transition-all duration-300 hover:scale-[1.02]"
             >
+              {/* Google SVG */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="22"
@@ -234,6 +299,7 @@ export default function SignUpPage() {
               onClick={() => handleSocialSignup("Apple")}
               className="w-full glass-effect border-white/30 text-card-foreground hover:bg-white/20 font-sans transition-all duration-300 hover:scale-[1.02]"
             >
+              {/* Apple SVG */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="22"
@@ -266,7 +332,6 @@ export default function SignUpPage() {
             </Button>
           </div>
 
-          {/* 🔗 Footer */}
           <div className="text-center flex flex-col space-y-2 mt-4">
             <a
               href="/login"

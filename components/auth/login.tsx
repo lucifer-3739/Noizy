@@ -1,10 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
+import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -12,33 +22,59 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { toast } from "sonner";
+import { signInUser } from "@/server/users";
+
+// Best practice for zod to show "required" errors if left empty
+const formSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 export default function LoginPage() {
   const { theme } = useTheme();
+  const formRef = useRef<HTMLFormElement | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // 🧩 Avoid SSR mismatches — render only after mounting
   if (!mounted) return null;
 
   const isDark = theme === "dark";
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    console.log("Login attempted with:", { email, password });
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    try {
+      setIsLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const result = await signInUser(data.email, data.password);
+      // signInUser returns { success: boolean; message: string }
+      if (!result || !result.success) {
+        toast.error(result?.message || "Failed to sign in. Please try again.");
+        return;
+      }
+      toast.success(result.message || "Signed in successfully!");
+    } catch (err) {
+      toast.error("Failed to sign in. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle client-side validation failing before onSubmit is called
+  const handleInvalid = () => {
+    toast.error("Please correct the highlighted errors.");
   };
 
   const handleSocialLogin = (provider: string) => {
-    console.log(`[v0] Social login with: ${provider}`);
+    toast(`Social login with ${provider} coming soon!`);
   };
 
   return (
@@ -58,7 +94,6 @@ export default function LoginPage() {
             : "0 32px 80px rgba(0, 0, 0, 0.2), inset 0 3px 0 rgba(255,255,255,0.6)",
         }}
       >
-        {/* ✨ Liquid shimmer layer */}
         <div className="absolute inset-0 animate-[liquid_6s_infinite_linear] bg-[linear-gradient(120deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.05)_40%,transparent_100%)] opacity-60 pointer-events-none" />
 
         <CardHeader className="text-center space-y-2 relative z-10">
@@ -71,69 +106,85 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent className="space-y-6 relative z-10">
-          {/* 🔐 Login Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium text-card-foreground font-sans"
-              >
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
-                  isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
-                } transition-all duration-200`}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-sm font-medium text-card-foreground font-sans"
-              >
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
-                  isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
-                } transition-all duration-200`}
-                required
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full font-sans font-bold py-5 transition-all duration-300 hover:scale-[1.02]"
-              style={{
-                backgroundColor: isDark ? "##7C3AED" : "##7C3AED",
-                color: "white",
-              }}
-              disabled={isLoading}
+          <Form {...form}>
+            <form
+              ref={formRef}
+              onSubmit={form.handleSubmit(onSubmit, handleInvalid)}
+              className="space-y-4"
+              noValidate
             >
-              {isLoading ? "Signing In..." : "Sign In"}
-            </Button>
-          </form>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="Enter your email"
+                        className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
+                          isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
+                        } transition-all duration-200 ${
+                          form.formState.errors.email
+                            ? "border-red-500 ring-red-500 focus:ring-red-500"
+                            : ""
+                        }`}
+                        {...field}
+                        aria-invalid={!!form.formState.errors.email}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          {/* 🌈 Divider */}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        className={`border-white/30 bg-white/10 placeholder:text-card-foreground/50 text-card-foreground py-3 focus:ring-2 ${
+                          isDark ? "focus:ring-blue-400" : "focus:ring-blue-600"
+                        } transition-all duration-200 ${
+                          form.formState.errors.password
+                            ? "border-red-500 ring-red-500 focus:ring-red-500"
+                            : ""
+                        }`}
+                        {...field}
+                        aria-invalid={!!form.formState.errors.password}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="w-full font-sans font-bold py-5 transition-all duration-300 hover:scale-[1.02]"
+                style={{
+                  backgroundColor: isDark ? "#7C3AED" : "#7C3AED",
+                  color: "white",
+                }}
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing In..." : "Sign In"}
+              </Button>
+            </form>
+          </Form>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="px-2 text-card-foreground/60 font-sans">
               Or continue with
             </span>
           </div>
-
-          {/* ☁️ Social Login Buttons */}
           <div className="space-y-3">
             <Button
               variant="outline"
@@ -181,9 +232,8 @@ export default function LoginPage() {
                   C44,22.659,43.862,21.35,43.611,20.083z"
                 />
               </svg>
-              <span className="ml-2">Continue with Google</span>
+              Continue with Google
             </Button>
-
             <Button
               variant="outline"
               onClick={() => handleSocialLogin("Apple")}
@@ -217,14 +267,13 @@ export default function LoginPage() {
                   C18.098,5.937,16.488,6.872,15.001,6.688z"
                 />
               </svg>
-              <span className="ml-2">Continue with Apple</span>
+              Continue with Apple
             </Button>
           </div>
 
-          {/* 🔗 Footer Links */}
           <div className="text-center flex flex-col space-y-2 mt-4">
             <a
-              href="#"
+              href="/forgot-password"
               className="text-sm text-card-foreground/70 hover:text-card-foreground font-sans transition-colors"
             >
               Forgot your password?
