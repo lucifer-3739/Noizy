@@ -47,7 +47,6 @@ export async function POST(req: Request) {
       duration,
     });
 
-    // Convert files to buffers
     const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
     const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
 
@@ -58,20 +57,32 @@ export async function POST(req: Request) {
     const audioKey = `audio/${randomUUID()}.${audioExt}`;
     const coverKey = `covers/${randomUUID()}.${coverExt}`;
 
-    // Upload files to MinIO
-    const audioUrl = await uploadToMinio(
-      process.env.MINIO_BUCKET!,
-      audioKey,
-      audioBuffer,
-      audioFile.type
-    );
+    let audioUrl: string;
+    let coverUrl: string;
 
-    const coverUrl = await uploadToMinio(
-      process.env.MINIO_BUCKET!,
-      coverKey,
-      coverBuffer,
-      coverFile.type
-    );
+    try {
+      audioUrl = await uploadToMinio(
+        process.env.MINIO_BUCKET!,
+        audioKey,
+        audioBuffer,
+        audioFile.type
+      );
+    } catch (uploadError) {
+      console.error("[v0] Audio upload to MinIO failed:", uploadError);
+      throw new Error("Failed to upload audio file to storage");
+    }
+
+    try {
+      coverUrl = await uploadToMinio(
+        process.env.MINIO_BUCKET!,
+        coverKey,
+        coverBuffer,
+        coverFile.type
+      );
+    } catch (uploadError) {
+      console.error("[v0] Cover upload to MinIO failed:", uploadError);
+      throw new Error("Failed to upload cover image to storage");
+    }
 
     // Get or create artist
     let artistId: number;
@@ -88,7 +99,16 @@ export async function POST(req: Request) {
         .insert(artists)
         .values({ name: artist })
         .returning();
+
+      if (!newArtist) {
+        throw new Error("Failed to create artist record");
+      }
+
       artistId = newArtist.id;
+    }
+
+    if (!artistId) {
+      throw new Error("Failed to get artist ID");
     }
 
     // Insert song into database
@@ -103,6 +123,10 @@ export async function POST(req: Request) {
         releaseDate: new Date(),
       })
       .returning();
+
+    if (!song) {
+      throw new Error("Failed to create song record");
+    }
 
     return NextResponse.json(
       {
@@ -121,7 +145,7 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (e: any) {
-    console.error("❌ Song upload error:", e);
+    console.error("[v0] Song upload error:", e);
     return NextResponse.json(
       {
         error: e.message || "Failed to upload song",
