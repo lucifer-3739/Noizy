@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Play, Pause, Upload, Music4 } from "lucide-react";
-
+import { Play, Pause, Music4 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import UploadDialog from "@/components/dashboard/UploadDialog"; // adjust path if needed
+import { toast } from "sonner";
 
 type Song = {
   id: number;
@@ -22,24 +23,59 @@ export default function DashboardPage() {
   const [current, setCurrent] = useState<Song | null>(null);
   const [playing, setPlaying] = useState(false);
 
+  // 🎧 Create a single audio instance
   const audio = useMemo(() => {
     if (typeof window === "undefined") return null;
     return new Audio();
   }, []);
 
+  // 🧹 Cleanup on unmount
   useEffect(() => {
-    fetch("/api/songs")
-      .then((r) => r.json())
-      .then((d) => setSongs(d.songs || []))
-      .finally(() => setLoading(false));
+    return () => {
+      if (audio) {
+        audio.pause();
+        audio.src = "";
+      }
+    };
+  }, [audio]);
+
+  // 🔄 Fetch all songs
+  async function fetchSongs() {
+    try {
+      const res = await fetch("/api/songs");
+      if (!res.ok) throw new Error("Failed to fetch songs");
+      const data = await res.json();
+      setSongs(data.songs || []);
+    } catch (err: any) {
+      console.error("Fetch songs error:", err);
+      toast.error(err.message || "Error loading songs");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchSongs();
   }, []);
 
+  // 🔊 Handle audio playback
   useEffect(() => {
     if (!audio) return;
     if (current) {
-      audio.src = current.streamUrl; // signed
+      audio.src = current.streamUrl; // use stream endpoint
       audio.onended = () => setPlaying(false);
-      if (playing) audio.play();
+      if (playing) {
+        audio
+          .play()
+          .then(() => console.log(`Playing: ${current.title}`))
+          .catch((err) => {
+            console.error("Playback error:", err);
+            toast.error("Could not play audio");
+            setPlaying(false);
+          });
+      } else {
+        audio.pause();
+      }
     } else {
       audio.pause();
     }
@@ -47,41 +83,47 @@ export default function DashboardPage() {
 
   const togglePlay = (song?: Song) => {
     if (!audio) return;
+    // if selecting a new song
     if (song && (!current || current.id !== song.id)) {
       setCurrent(song);
       setPlaying(true);
       return;
     }
+    // if toggling current song
     if (!current) return;
     if (playing) {
       audio.pause();
       setPlaying(false);
     } else {
-      audio.play();
+      audio.play().catch((err) => {
+        console.error("Playback error:", err);
+        toast.error("Could not play audio");
+      });
       setPlaying(true);
     }
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-zinc-950 via-zinc-900 to-zinc-800 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-800 text-white">
       <div className="max-w-7xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Music4 /> Your Dashboard
           </h1>
+
+          {/* ✅ Refreshes song list on upload */}
           <UploadDialog
             onUploaded={() => {
               setLoading(true);
-              fetch("/api/songs")
-                .then((r) => r.json())
-                .then((d) => setSongs(d.songs || []))
-                .finally(() => setLoading(false));
+              fetchSongs();
             }}
           />
         </div>
 
         {loading ? (
           <p className="text-zinc-400">Loading songs…</p>
+        ) : songs.length === 0 ? (
+          <p className="text-zinc-500">No songs uploaded yet.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {songs.map((s, i) => (
@@ -114,13 +156,11 @@ export default function DashboardPage() {
                       >
                         {current?.id === s.id && playing ? (
                           <>
-                            <Pause className="mr-2" />
-                            Pause
+                            <Pause className="mr-2" /> Pause
                           </>
                         ) : (
                           <>
-                            <Play className="mr-2" />
-                            Play
+                            <Play className="mr-2" /> Play
                           </>
                         )}
                       </Button>
@@ -132,7 +172,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Mini player */}
+        {/* 🎧 Mini player */}
         {current && (
           <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] md:w-[60%] bg-zinc-900/70 backdrop-blur-xl border border-zinc-700 rounded-2xl px-6 py-4 shadow-2xl">
             <div className="flex items-center gap-4">
@@ -149,13 +189,11 @@ export default function DashboardPage() {
               <Button className="rounded-full" onClick={() => togglePlay()}>
                 {playing ? (
                   <>
-                    <Pause className="mr-2" />
-                    Pause
+                    <Pause className="mr-2" /> Pause
                   </>
                 ) : (
                   <>
-                    <Play className="mr-2" />
-                    Play
+                    <Play className="mr-2" /> Play
                   </>
                 )}
               </Button>
@@ -184,129 +222,8 @@ function secondsFromFile(file: File): Promise<number> {
   });
 }
 
-function UploadDialog({ onUploaded }: { onUploaded: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  const handle = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const title = String(fd.get("title"));
-    const artist = String(fd.get("artist"));
-    const audio = fd.get("audio") as File | null;
-    const cover = fd.get("cover") as File | null;
-    if (!audio || !cover) return alert("Pick audio and cover");
-
-    setBusy(true);
-    try {
-      const initRes = await fetch("/api/upload/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          audioExt: extOf(audio.name),
-          coverExt: extOf(cover.name),
-        }),
-      }).then((r) => r.json());
-
-      if (!initRes.audioUrl || !initRes.coverUrl)
-        throw new Error("Failed to init upload");
-
-      // PUT directly to MinIO
-      await Promise.all([
-        fetch(initRes.audioUrl, { method: "PUT", body: audio }),
-        fetch(initRes.coverUrl, { method: "PUT", body: cover }),
-      ]);
-
-      const durationSec = await secondsFromFile(audio);
-
-      const commit = await fetch("/api/upload/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          artist,
-          durationSec,
-          audioKey: initRes.audioKey,
-          coverKey: initRes.coverKey,
-        }),
-      }).then((r) => r.json());
-
-      if (!commit.song) throw new Error("Commit failed");
-      setOpen(false);
-      onUploaded();
-    } catch (e: any) {
-      alert(e.message || "Upload failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <>
-      <Button onClick={() => setOpen(true)} className="rounded-full">
-        <Upload className="mr-2" />
-        Upload
-      </Button>
-      {open && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60">
-          <div className="w-full max-w-lg bg-zinc-900 border border-zinc-700 rounded-2xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Upload a new song</h2>
-            <form onSubmit={handle} className="space-y-4">
-              <div>
-                <label className="text-sm">Title</label>
-                <input
-                  name="title"
-                  required
-                  className="mt-1 w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Artist</label>
-                <input
-                  name="artist"
-                  required
-                  className="mt-1 w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Audio file</label>
-                <input
-                  name="audio"
-                  type="file"
-                  accept="audio/*"
-                  required
-                  className="mt-1 block w-full"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Cover image</label>
-                <input
-                  name="cover"
-                  type="file"
-                  accept="image/*"
-                  required
-                  className="mt-1 block w-full"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="px-4 py-2 rounded-lg border border-zinc-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={busy}
-                  className="px-4 py-2 rounded-lg bg-emerald-500 text-white disabled:opacity-50"
-                >
-                  {busy ? "Uploading…" : "Upload"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
+<UploadDialog
+  onUploaded={function (): void {
+    throw new Error("Function not implemented.");
+  }}
+/>;
