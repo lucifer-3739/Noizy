@@ -1,6 +1,15 @@
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  serial,
+  varchar,
+  integer,
+  timestamp,
+  text,
+  boolean,
+} from "drizzle-orm/pg-core";
 
-export const user = pgTable("user", {
+// ✅ Use "users" as table name to avoid reserved keyword issues
+export const users = pgTable("users", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
@@ -9,7 +18,7 @@ export const user = pgTable("user", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 });
 
@@ -19,13 +28,13 @@ export const session = pgTable("session", {
   token: text("token").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   userId: text("user_id")
     .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+    .references(() => users.id, { onDelete: "cascade" }),
 });
 
 export const account = pgTable("account", {
@@ -34,7 +43,7 @@ export const account = pgTable("account", {
   providerId: text("provider_id").notNull(),
   userId: text("user_id")
     .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+    .references(() => users.id, { onDelete: "cascade" }),
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   idToken: text("id_token"),
@@ -44,7 +53,7 @@ export const account = pgTable("account", {
   password: text("password"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 });
 
@@ -56,8 +65,35 @@ export const verification = pgTable("verification", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 });
 
-export const schema = { user, session, account, verification };
+export const artists = pgTable("artists", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  country: varchar("country", { length: 50 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const songs = pgTable("songs", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 150 }).notNull(),
+  artistId: integer("artist_id").references(() => artists.id),
+  fileUrl: text("file_url").notNull(),
+  coverUrl: text("cover_url"),
+  duration: integer("duration"),
+  releaseDate: timestamp("release_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ✅ Schema alias — keeps adapter compatibility
+export const schema = {
+  user: users, // 👈 adapter expects this
+  users,
+  session,
+  account,
+  artists,
+  songs,
+  verification,
+};

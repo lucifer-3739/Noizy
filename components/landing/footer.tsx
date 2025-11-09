@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Github, Twitter } from "lucide-react";
+import Image from "next/image";
 
 export function Footer() {
   const [year, setYear] = useState<number | null>(null);
@@ -18,6 +19,7 @@ export function Footer() {
             <div className="flex items-center gap-3">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 bg-white/50 dark:bg-zinc-900/50 backdrop-blur">
                 <span className="text-[12px] font-semibold tracking-tight">
+                  {/* <Image src="./public/logo.svg" alt="Logo" width={50} height={50}/> */}
                   NZ
                 </span>
               </span>

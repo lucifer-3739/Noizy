@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { signInUser } from "@/server/users";
+import { useRouter } from "next/navigation";
 
 // Best practice for zod to show "required" errors if left empty
 const formSchema = z.object({
@@ -36,6 +37,7 @@ export default function LoginPage() {
   const formRef = useRef<HTMLFormElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const Router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,6 +63,7 @@ export default function LoginPage() {
         return;
       }
       toast.success(result.message || "Signed in successfully!");
+      Router.push("/dashboard");
     } catch (err) {
       toast.error("Failed to sign in. Please try again.");
     } finally {
