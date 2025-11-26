@@ -45,6 +45,7 @@ export default function UploadDialog({
     const cover = fd.get("cover") as File | null;
     const title = String(fd.get("title"));
     const artist = String(fd.get("artist"));
+    const album = fd.get("album") || null;
 
     if (!audio || !cover || !title || !artist) {
       toast.error("Please fill all fields and select both files.");
@@ -55,7 +56,22 @@ export default function UploadDialog({
       setBusy(true);
       // ⏱️ Calculate audio duration before upload
       const durationSec = await secondsFromFile(audio);
-      fd.append("duration", durationSec.toString());
+           // Validate with schema
+      const validation = UploadSchema.safeParse({
+        title,
+        artist,
+        audio,
+        cover,
+        duration: durationSec,
+        album,
+      });
+
+      if (!validation.success) {
+        toast.error(validation.error.errors[0].message);
+        return;
+      }
+
+     fd.append("duration", durationSec.toString());
 
       // ✅ Upload to /api/upload (single request with files)
       const res = await fetch("/api/upload", {
