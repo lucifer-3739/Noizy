@@ -12,7 +12,7 @@ git status
 
 git add .
 
-git commit - m "message hear"
+git commit -m "message hear"
 
 git push
 

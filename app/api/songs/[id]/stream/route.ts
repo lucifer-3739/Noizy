@@ -24,10 +24,12 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    const [song] = await db
-      .select()
-      .from(songs)
-      .where(eq(songs.id, Number(id)));
+    const numericId = Number(id);
+    if (isNaN(numericId)) {
+      return new Response("Invalid song ID", { status: 400 });
+    }
+
+    const [song] = await db.select().from(songs).where(eq(songs.id, numericId));
 
     if (!song) {
       return new Response("Song not found", { status: 404 });
@@ -49,6 +51,18 @@ export async function GET(
       const [startStr, endStr] = range.replace(/bytes=/, "").split("-");
       const start = Number(startStr);
       const end = endStr ? Number(endStr) : fileSize - 1;
+
+      if (
+        isNaN(start) ||
+        (endStr && isNaN(end)) ||
+        start < 0 ||
+        start >= fileSize ||
+        end >= fileSize ||
+        start > end
+      ) {
+        return new Response("Invalid Range", { status: 416 });
+      }
+
       const chunkSize = end - start + 1;
 
       const nodeStream = await minioClient.getPartialObject(

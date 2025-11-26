@@ -19,11 +19,19 @@ export const useSearch = (query: string) => {
     const delay = setTimeout(async () => {
       setLoading(true);
 
-      const res = await fetch(`/api/search?q=${query}`);
-      const data = await res.json();
-
-      setResults(data);
-      setLoading(false);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        if (!res.ok) {
+          throw new Error("Search failed");
+        }
+        const data = await res.json();
+        setResults(data);
+      } catch (error) {
+        console.error("Search error:", error);
+        setResults({ songs: [], artists: [], playlists: [] });
+      } finally {
+        setLoading(false);
+      }
     }, 300); // debounce
 
     return () => clearTimeout(delay);
