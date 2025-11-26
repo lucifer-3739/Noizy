@@ -11,14 +11,25 @@ export default function PlaylistClient({ id }: { id: string }) {
   useEffect(() => {
     const load = async () => {
       const res = await fetch(`/api/playlists/${id}`);
-      if (!res.ok) return notFound();
-
+     if (!res.ok) {
+       if (!cancelled) {
+        setPlaylist(null);
+        setLoading(false);
+      }
+       return;
+     }
       const data = await res.json();
-      setPlaylist(data);
-      setLoading(false);
+      if (!cancelled) {
+        setPlaylist(data);
+        setLoading(false);
+      }
     };
 
     load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
   
   if (loading) return <div>Loading...</div>;
