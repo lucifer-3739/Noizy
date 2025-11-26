@@ -20,7 +20,7 @@ export default function PlaylistClient({ id }: { id: string }) {
 
     load();
   }, [id]);
-
+  
   if (loading) return <div>Loading...</div>;
   if (!playlist) return <div>Not found</div>;
 
