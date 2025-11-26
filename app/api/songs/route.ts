@@ -1,7 +1,6 @@
 import { db } from "@/db/drizzle";
 import { songs, artists } from "@/db/schema";
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 
 export async function GET() {
   const allSongs = await db.select().from(songs);
