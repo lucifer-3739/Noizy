@@ -115,8 +115,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const setVolume = (vol: number) => {
     if (audioRef.current) {
-      audioRef.current.volume = Math.max(0, Math.min(1, vol));
-      setVolumeState(vol);
+     const clampedVol = Math.max(0, Math.min(1, vol));
+     audioRef.current.volume = clampedVol;
+     setVolumeState(clampedVol);
     }
   };
 
