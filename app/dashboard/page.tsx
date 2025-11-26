@@ -3,7 +3,6 @@ import { Player } from "@/components/dashboard/MiniPlayer";
 import UploadDialog from "@/components/dashboard/upload/UploadDialog";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import MiniPlayer from "../../test/mini-player";
 
 const DashboardPage = () => {
   const router = useRouter();
@@ -16,7 +15,6 @@ const DashboardPage = () => {
           router.refresh();
         }}
       />
-      <MiniPlayer />
     </div>
   );
 };
