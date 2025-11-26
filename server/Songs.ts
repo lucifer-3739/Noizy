@@ -1,7 +1,7 @@
 // NO "use server"
 
 type Playlist = {
-  id: string;
+  id: number;
   name: string;
 };
 
