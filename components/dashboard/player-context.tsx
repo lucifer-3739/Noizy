@@ -32,6 +32,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+   const playNextRef = useRef(playNext);
+   useEffect(() => {
+     playNextRef.current = playNext;
+   }, [playNext]);
+
   useEffect(() => {
     audioRef.current = new Audio();
 
@@ -39,7 +44,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
     const updateProgress = () => setProgress(audio.currentTime);
     const updateDuration = () => setDuration(audio.duration || 0);
-    const onEnded = () => playNext(); // Auto play next
+    const onEnded = () => playNextRef.current();
 
     audio.addEventListener("timeupdate", updateProgress);
     audio.addEventListener("loadedmetadata", updateDuration);
