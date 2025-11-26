@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
+import { Playlist } from "@/types";
 
 export default function PlaylistClient({ id }: { id: string }) {
-  const [playlist, setPlaylist] = useState(null);
+  const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
