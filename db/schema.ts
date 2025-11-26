@@ -157,8 +157,12 @@ export const playlistItemsRelations = relations(playlistItems, ({ one }) => ({
 const UploadSchema = z.object({
   title: z.string().min(1, "Title is required"),
   artist: z.string().min(1, "Artist name is required"),
-  audio: z.instanceof(File, { message: "Audio file is required" }),
-  cover: z.instanceof(File, { message: "Cover image is required" }),
+ audio: z.any().refine((val) => val && typeof val.arrayBuffer === 'function', {
+    message: "Audio file is required",
+  }),
+  cover: z.any().refine((val) => val && typeof val.arrayBuffer === 'function', {
+    message: "Cover image is required",
+  }),,
   duration: z.number().int().positive("Duration must be positive"),
   album: z.string().optional().nullable(),
 });
