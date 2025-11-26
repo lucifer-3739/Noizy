@@ -1,5 +1,4 @@
 import { MusicSidebar } from "@/components/dashboard/DashboardSidebar";
-import { PlayerProvider } from "@/components/dashboard/player-context";
 
 const DashboardLayout = ({
   children,
@@ -9,9 +8,7 @@ const DashboardLayout = ({
   return (
     <div className="flex">
       <MusicSidebar />
-      <main className="flex-1">
-        <PlayerProvider>{children}</PlayerProvider>
-      </main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 };
