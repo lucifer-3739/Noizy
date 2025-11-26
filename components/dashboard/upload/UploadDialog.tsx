@@ -4,6 +4,16 @@ import { useState } from "react";
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import z from "zod";
+
+const UploadSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  artist: z.string().min(1, "Artist name is required"),
+  audio: z.instanceof(File, { message: "Audio file is required" }),
+  cover: z.instanceof(File, { message: "Cover image is required" }),
+  duration: z.number().int().positive("Duration must be positive"),
+  album: z.string().optional().nullable().default(null),
+});
 
 // Utility for duration
 async function secondsFromFile(file: File): Promise<number> {

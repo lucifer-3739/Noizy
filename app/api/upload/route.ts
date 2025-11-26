@@ -18,27 +18,16 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
 
-    // Extract form fields
     const title = formData.get("title") as string;
     const artist = formData.get("artist") as string;
     const audioFile = formData.get("audio") as File | null;
     const coverFile = formData.get("cover") as File | null;
+
     const duration = formData.get("duration")
       ? Number.parseInt(formData.get("duration") as string)
       : 0;
 
-    // Validate all required fields
-    if (!title || !artist || !audioFile || !coverFile || !duration) {
-      return NextResponse.json(
-        {
-          error:
-            "Missing required fields: title, artist, audio, cover, and duration",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Parse and validate
+    // Validate
     UploadSchema.parse({
       title,
       artist,
@@ -47,34 +36,36 @@ export async function POST(req: Request) {
       duration,
     });
 
-    // Convert files to buffers
-    const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
-    const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
+    // Convert to buffers
+    const audioBuffer = Buffer.from(await audioFile!.arrayBuffer());
+    const coverBuffer = Buffer.from(await coverFile!.arrayBuffer());
 
-    // Generate unique keys
-    const audioExt = audioFile.name.split(".").pop() || "mp3";
-    const coverExt = coverFile.name.split(".").pop() || "png";
+    // File extensions
+    const audioExt = audioFile!.name.split(".").pop() || "mp3";
+    const coverExt = coverFile!.name.split(".").pop() || "png";
 
+    // MinIO file keys
     const audioKey = `audio/${randomUUID()}.${audioExt}`;
     const coverKey = `covers/${randomUUID()}.${coverExt}`;
 
     // Upload files to MinIO
-    const audioUrl = await uploadToMinio(
+    await uploadToMinio(
       process.env.MINIO_BUCKET!,
       audioKey,
       audioBuffer,
-      audioFile.type
+      audioFile!.type
     );
 
     const coverUrl = await uploadToMinio(
       process.env.MINIO_BUCKET!,
       coverKey,
       coverBuffer,
-      coverFile.type
+      coverFile!.type
     );
 
-    // Get or create artist
+    // Find or create artist
     let artistId: number;
+
     const existingArtist = await db
       .select()
       .from(artists)
@@ -86,21 +77,25 @@ export async function POST(req: Request) {
     } else {
       const [newArtist] = await db
         .insert(artists)
-        .values({ name: artist })
+        .values({
+          name: artist,
+          bio: null,
+          imageUrl: null,
+        })
         .returning();
+
       artistId = newArtist.id;
     }
 
-    // Insert song into database
+    // Insert song with NEW schema fields
     const [song] = await db
       .insert(songs)
       .values({
         title,
         artistId,
-        fileUrl: audioUrl,
-        coverUrl,
         duration,
-        releaseDate: new Date(),
+        storageKey: audioKey, // important
+        coverUrl,
       })
       .returning();
 
@@ -108,15 +103,7 @@ export async function POST(req: Request) {
       {
         success: true,
         message: "Song uploaded successfully",
-        song: {
-          id: song.id,
-          title: song.title,
-          artistId: song.artistId,
-          fileUrl: song.fileUrl,
-          coverUrl: song.coverUrl,
-          duration: song.duration,
-          createdAt: song.createdAt,
-        },
+        song,
       },
       { status: 201 }
     );
