@@ -3,3 +3,17 @@ npx drizzle-kit push
 
 // to see the drizzle orm 
 npx drizzle-kit studio
+
+
+# Git commands
+git checkout -B <Branch name>
+
+git status
+
+git add .
+
+git commit - m "message hear"
+
+git push
+
+
