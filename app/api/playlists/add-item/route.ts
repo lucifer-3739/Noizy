@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db/drizzle";
 import { playlistItems, playlists, songs } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 const AddItemSchema = z.object({
   playlistId: z.number().positive(),
@@ -53,7 +53,11 @@ export async function POST(req: Request) {
       .values({
         playlistId,
         songId,
-        position: nextPosition,
+        position: sql`(
++          SELECT COALESCE(MAX(position), 0) + 1
++          FROM ${playlistItems}
++          WHERE ${playlistItems.playlistId} = ${playlistId}
++        )`,
       })
       .returning();
 
