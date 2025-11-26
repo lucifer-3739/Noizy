@@ -19,17 +19,13 @@ import { fetchPlaylists } from "@/server/Songs";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Playlist } from "@/types";
 
 interface MenuItem {
   id: string;
   label: string;
   icon: "home" | "search" | "favorites" | "artists" | "podcast";
   path: string;
-}
-
-interface Playlist {
-  id: string;
-  name: string;
 }
 
 const iconMap = {
