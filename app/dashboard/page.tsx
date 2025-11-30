@@ -29,11 +29,11 @@ export default function DashboardPage() {
         >
           <HomepageBackground />
         </div>
-        <h1 className="text-white font-(family-name:--font-lemon) text-9xl sm:text-12xl font-extrabold tracking-widest">
+        <h1 className="text-white font-lemon text-9xl sm:text-12xl font-extrabold tracking-widest">
           AUDIOWAVE
         </h1>
 
-        <p className="text-white/80 fnt-(fanily-nam:--font-caveat) italic text-5xl sm:text-6xl mt-2">
+        <p className="text-white/80 font-caveat italic text-5xl sm:text-6xl mt-2">
           YOUR SOUNDTRACK TO NOW
         </p>
       </div>

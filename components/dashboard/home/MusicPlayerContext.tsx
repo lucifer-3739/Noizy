@@ -43,6 +43,7 @@ export function MusicPlayerProvider({
     audio.oncanplay = null;
     audio.onloadedmetadata = null;
     audio.onerror = null;
+    audio.onended = null;
 
     // Set new stream URL
     audio.src = song.streamUrl;
@@ -57,7 +58,19 @@ export function MusicPlayerProvider({
         setIsPlaying(true);
       } catch (err) {
         console.warn("Playback interrupted:", err);
+        setIsPlaying(false);
       }
+    };
+
+    // Reset state when track ends
+    audio.onended = () => {
+      setIsPlaying(false);
+    };
+
+    // Reset state on error
+    audio.onerror = () => {
+      setIsPlaying(false);
+      console.error("Audio playback error:", audio.error);
     };
   };
 
