@@ -17,3 +17,13 @@ git commit -m "message hear"
 git push
 
 
+
+
+<div className="absolute top-4 left-4">
+        <UploadDialog
+          onUploaded={() => {
+            toast.success("Song list updated!");
+            router.refresh();
+          }}
+        />
+      </div>

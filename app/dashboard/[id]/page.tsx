@@ -26,7 +26,7 @@ export default async function DashboardPage({
   const song = await res.json();
 
   return (
-    <div className="flex flex-1 min-h-screen bg-gradient-to-br from-purple-900 to-black">
+    <div className="flex flex-1 min-h-screen bg-linear-to-br from-purple-900 to-black">
       <GlassMusicPlayer song={song} />
     </div>
   );

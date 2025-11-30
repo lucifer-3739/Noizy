@@ -19,49 +19,33 @@ function nodeStreamToWebStream(readable: Readable) {
 
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params;
-
+    const { id } = await params;
     const numericId = Number(id);
-    if (isNaN(numericId)) {
-      return new Response("Invalid song ID", { status: 400 });
-    }
+    if (isNaN(numericId)) return new Response("Invalid ID", { status: 400 });
 
     const [song] = await db.select().from(songs).where(eq(songs.id, numericId));
+    if (!song) return new Response("Song not found", { status: 404 });
 
-    if (!song) {
-      return new Response("Song not found", { status: 404 });
-    }
+    console.log("STREAM FILE KEY:", song.storageKey);
 
-    // Check for Range header (user scrubbing)
-    const range = req.headers.get("range");
-
-    // Get file info from MinIO
+    // Get MinIO file metadata
     const stat = await minioClient.statObject(
       process.env.MINIO_BUCKET!,
       song.storageKey
     );
 
+    const mimeType = stat.metaData["content-type"] || "audio/mpeg"; // FIXED
     const fileSize = stat.size;
 
-    // --- RANGE REQUEST HANDLING ---
+    const range = req.headers.get("range");
+
     if (range) {
       const [startStr, endStr] = range.replace(/bytes=/, "").split("-");
       const start = Number(startStr);
       const end = endStr ? Number(endStr) : fileSize - 1;
-
-      if (
-        isNaN(start) ||
-        (endStr && isNaN(end)) ||
-        start < 0 ||
-        start >= fileSize ||
-        end >= fileSize ||
-        start > end
-      ) {
-        return new Response("Invalid Range", { status: 416 });
-      }
 
       const chunkSize = end - start + 1;
 
@@ -72,12 +56,10 @@ export async function GET(
         chunkSize
       );
 
-      const webStream = nodeStreamToWebStream(nodeStream);
-
-      return new Response(webStream, {
+      return new Response(nodeStreamToWebStream(nodeStream), {
         status: 206,
         headers: {
-          "Content-Type": "audio/mpeg",
+          "Content-Type": mimeType,
           "Content-Length": chunkSize.toString(),
           "Content-Range": `bytes ${start}-${end}/${fileSize}`,
           "Accept-Ranges": "bytes",
@@ -85,25 +67,22 @@ export async function GET(
       });
     }
 
-    // --- NORMAL STREAM ---
+    // FULL STREAM
     const nodeStream = await minioClient.getObject(
       process.env.MINIO_BUCKET!,
       song.storageKey
     );
 
-    const webStream = nodeStreamToWebStream(nodeStream);
-
-    return new Response(webStream, {
+    return new Response(nodeStreamToWebStream(nodeStream), {
       status: 200,
       headers: {
-        "Content-Type": "audio/mpeg",
+        "Content-Type": mimeType,
         "Content-Length": fileSize.toString(),
         "Accept-Ranges": "bytes",
-        "Cache-Control": "no-cache",
       },
     });
   } catch (err: any) {
     console.error("STREAM ERROR:", err);
-    return new Response("Internal Server Error", { status: 500 });
+    return new Response("Streaming failed", { status: 500 });
   }
 }

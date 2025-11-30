@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Lemon, Caveat } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { cn } from "@/lib/utils";
+import { fontAerosoldis } from "@/public/fonts";
+import { MusicPlayerProvider } from "@/components/dashboard/home/MusicPlayerContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,6 +15,18 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const lemon = Lemon({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-lemon",
+});
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: "600",
+  variable: "--font-caveat",
 });
 
 export const metadata: Metadata = {
@@ -27,7 +42,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={cn(
+          `${geistSans.variable} ${geistMono.variable} ${lemon.variable} ${caveat.variable} antialiased`,
+          fontAerosoldis.variable
+        )}
       >
         <ThemeProvider
           attribute="class"
@@ -35,7 +53,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <MusicPlayerProvider>{children}</MusicPlayerProvider>
           <Toaster />
         </ThemeProvider>
       </body>
