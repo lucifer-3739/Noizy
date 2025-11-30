@@ -51,9 +51,8 @@ export function Hero() {
         />
       </div>
 
-      {/* Hero Content */}
       <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between mx-auto w-full max-w-7xl px-6 lg:px-16">
-        {/* Text Section */}
+
         <div className="text-left max-w-2xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/30 dark:bg-zinc-900/30 backdrop-blur px-2.5 py-1.5 text-xs text-zinc-600 dark:text-zinc-400 mb-6 shadow-sm">
             <span className="text-indigo-500">🎵</span>

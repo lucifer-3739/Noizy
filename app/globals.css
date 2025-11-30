@@ -151,3 +151,40 @@ body::after {
     background-position: 200% 50%;
   }
 }
+
+
+/* ✨ Neon Button */
+.neon-btn {
+  background: transparent;
+  border: 2px solid #00eaff;
+  color: #00eaff;
+  border-radius: 12px;
+  box-shadow: 0 0 15px #00eaff;
+  transition: all 0.2s ease;
+}
+.neon-btn:hover {
+  box-shadow: 0 0 25px #00eaff, inset 0 0 15px #00eaff;
+  color: white;
+}
+
+/* ✨ Glitch Text Effect */
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: .7;
+}
+.glitch::before {
+  transform: translate(-2px, -2px);
+  color: #ff00f2;
+}
+.glitch::after {
+  transform: translate(2px, 2px);
+  color: #00eaff;
+}
