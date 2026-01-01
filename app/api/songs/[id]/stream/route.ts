@@ -29,8 +29,6 @@ export async function GET(
     const [song] = await db.select().from(songs).where(eq(songs.id, numericId));
     if (!song) return new Response("Song not found", { status: 404 });
 
-    console.log("STREAM FILE KEY:", song.storageKey);
-
     // Get MinIO file metadata
     const stat = await minioClient.statObject(
       process.env.MINIO_BUCKET!,

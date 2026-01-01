@@ -1,0 +1,10 @@
+@keyframes miniFadeIn {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.animate-mini-in { animation: miniFadeIn 320ms ease-out; }
+
+audio[data-global-player] { display: none; }
+
+.z-60 { z-index: 60; }
+.z-70 { z-index: 70; }

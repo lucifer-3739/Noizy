@@ -8,13 +8,19 @@ export async function GET() {
 
   const songsWithArtist = allSongs.map((s) => {
     const artist = artistList.find((a) => a.id === s.artistId);
+
+    // Extract object key: "covers/xyz.jpg"
+    const cleanKey = s.coverUrl
+      ?.replace(/^https?:\/\/[^/]+\/[^/]+\//, "") // remove protocol + host + bucket/
+      .replace(/^\/+/, ""); // remove extra slashes
+
     return {
       id: s.id,
       title: s.title,
-      artist: artist?.name || "Unknown",
-      durationSec: s.duration ?? 0,
-      coverUrl: s.coverUrl ?? "",
-      streamUrl: `/api/songs/${s.id}/stream`, // ✅ used by Dashboard
+      artist: artist?.name,
+      coverUrl: cleanKey ? `/api/covers/${encodeURIComponent(cleanKey)}` : null,
+      streamUrl: `/api/songs/${s.id}/stream`,
+      durationSec: s.duration,
     };
   });
 
