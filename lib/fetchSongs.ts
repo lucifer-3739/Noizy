@@ -1,9 +1,14 @@
-export async function fetchSongs() {
+import { Song } from "@/types";
+
+export async function fetchSongs(): Promise<Song[]> {
   try {
     const res = await fetch("/api/song", { cache: "no-store" });
-    const data = await res.json();
 
-    console.log("🔥 /api/songs RAW RESPONSE:", data);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch songs: ${res.status}`);
+    }
+
+    const data = await res.json();
 
     return Array.isArray(data.songs) ? data.songs : [];
   } catch (error) {

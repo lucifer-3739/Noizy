@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { fetchSongs } from "@/lib/fetchSongs";
-import { useMusicPlayer } from "./MusicPlayerContext";
 import { Play } from "lucide-react";
+import { useMusicPlayer } from "../songsplayer/MusicPlayerContext";
 
 export default function HomePage() {
   const [songs, setSongs] = useState<any[]>([]);
@@ -27,7 +27,7 @@ export default function HomePage() {
           <div
             key={song.id}
             className="bg-white/5 p-4 rounded-xl flex items-center justify-between hover:bg-white/10 transition cursor-pointer"
-            onClick={() => playSong(song)}
+            onClick={() => playSong(song, songs)}
           >
             <div>
               <h3 className="text-xl font-semibold">{song.title}</h3>

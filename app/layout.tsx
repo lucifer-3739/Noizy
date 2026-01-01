@@ -5,7 +5,10 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { fontAerosoldis } from "@/public/fonts";
-import { MusicPlayerProvider } from "@/components/dashboard/home/MusicPlayerContext";
+import MiniPlayer from "@/components/dashboard/songsplayer/MiniPlayer";
+import FullPlayer from "@/components/dashboard/songsplayer/FullPlayer";
+import { MusicPlayerProvider } from "@/components/dashboard/songsplayer/MusicPlayerContext";
+import UploadSongOverlay from "@/components/dashboard/songsplayer/UploadSongPlayer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,7 +56,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <MusicPlayerProvider>{children}</MusicPlayerProvider>
+          <MusicPlayerProvider>
+            <MiniPlayer />
+            <FullPlayer />
+            <UploadSongOverlay />
+            {children}
+          </MusicPlayerProvider>
           <Toaster />
         </ThemeProvider>
       </body>
