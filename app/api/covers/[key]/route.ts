@@ -33,13 +33,14 @@ export async function GET(
       key
     );
 
-    const webStream = new ReadableStream({
-      start(controller) {
-        nodeStream.on("data", (chunk) => controller.enqueue(chunk));
-        nodeStream.on("end", () => controller.close());
-        nodeStream.on("error", (err) => controller.error(err));
-      },
-    });
+    // const webStream = new ReadableStream({
+    //   start(controller) {
+    //     nodeStream.on("data", (chunk) => controller.enqueue(chunk));
+    //     nodeStream.on("end", () => controller.close());
+    //     nodeStream.on("error", (err) => controller.error(err));
+    //   },
+    // });
+    const webStream = nodeToWeb(nodeStream);
 
     return new Response(webStream, {
       status: 200,

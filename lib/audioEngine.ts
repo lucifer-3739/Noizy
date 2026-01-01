@@ -17,24 +17,28 @@ export function initAudioEngine() {
     document.body.appendChild(audio);
   }
 
-  // create audio context ONCE
+  // AudioContext and nodes are now created/resumed on user gesture
+  return { audio, audioCtx, analyser };
+}
+
+// Call this in a user gesture handler (e.g. play button)
+export async function resumeAudioContext() {
   if (!audioCtx) {
     audioCtx = new AudioContext();
   }
-
+  if (audioCtx.state === "suspended") {
+    await audioCtx.resume();
+  }
   // create source node ONCE
-  if (!sourceNode) {
+  if (!sourceNode && audio) {
     sourceNode = audioCtx.createMediaElementSource(audio);
   }
-
   // create analyser ONCE
-  if (!analyser) {
+  if (!analyser && audioCtx) {
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = 2048;
-
-    sourceNode.connect(analyser);
+    sourceNode?.connect(analyser);
     analyser.connect(audioCtx.destination);
   }
-
   return { audio, audioCtx, analyser };
 }
