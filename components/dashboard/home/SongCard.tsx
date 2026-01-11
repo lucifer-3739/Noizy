@@ -139,9 +139,10 @@ export default function SongCard({ song, playlist, userPlaylists = [] }: SongCar
                                     <div className="px-3 py-2 text-xs font-bold text-white/50 uppercase tracking-wider border-b border-white/5 mb-1">
                                         Add to Playlist
                                     </div>
+
                                     <div className="max-h-48 overflow-y-auto space-y-0.5 custom-scrollbar">
                                         {userPlaylists.length > 0 ? (
-                                            userPlaylists.map(pl => (
+                                            userPlaylists.map((pl) => (
                                                 <button
                                                     key={pl.id}
                                                     onClick={() => addToPlaylist(pl.id)}
@@ -162,6 +163,7 @@ export default function SongCard({ song, playlist, userPlaylists = [] }: SongCar
                                 </motion.div>
                             )}
                         </AnimatePresence>
+
                     </div>
                 </div>
             </div>

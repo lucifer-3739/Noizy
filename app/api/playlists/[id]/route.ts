@@ -9,9 +9,9 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
-        const playlistId = parseInt(id);
+        const playlistId = Number(id);
 
-        if (isNaN(playlistId)) {
+        if (Number.isNaN(playlistId)) {
             return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
         }
 
@@ -32,10 +32,12 @@ export async function GET(
         });
 
         if (!playlist) {
-            return NextResponse.json({ error: "Playlist not found" }, { status: 404 });
+            return NextResponse.json(
+                { error: "Playlist not found" },
+                { status: 404 }
+            );
         }
 
-        // Format for frontend
         const formatted = {
             id: playlist.id,
             name: playlist.name,
@@ -43,15 +45,20 @@ export async function GET(
             coverUrl: playlist.coverUrl,
             songs: playlist.items.map((item) => {
                 const s = item.song;
-                const cleanKey = s.coverUrl
-                    ?.replace(/^https?:\/\/[^/]+\/[^/]+\//, "")
+
+                // ✅ FIX: guard coverUrl safely
+                const rawCoverUrl = s.coverUrl ?? "";
+                const cleanKey = rawCoverUrl
+                    .replace(/^https?:\/\/[^/]+\/[^/]+\//, "")
                     .replace(/^\/+/, "");
 
                 return {
                     id: s.id,
                     title: s.title,
                     artist: s.artist.name,
-                    coverUrl: cleanKey ? `/api/covers/${encodeURIComponent(cleanKey)}` : null,
+                    coverUrl: cleanKey
+                        ? `/api/covers/${encodeURIComponent(cleanKey)}`
+                        : null,
                     streamUrl: `/api/songs/${s.id}/stream`,
                     durationSec: s.duration,
                 };

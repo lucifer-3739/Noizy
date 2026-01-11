@@ -29,7 +29,7 @@ export default function PlaylistClient({ id }: { id: string }) {
         if (mounted) {
           setPlaylist(data);
         }
-      } catch (err) {
+      } catch {
         if (mounted) setPlaylist(null);
       } finally {
         if (mounted) setLoading(false);
@@ -43,9 +43,37 @@ export default function PlaylistClient({ id }: { id: string }) {
     };
   }, [id]);
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Link copied to clipboard!");
+  // ✅ FIXED: await clipboard + handle failure properly
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard!");
+    } catch (error) {
+      console.error("Clipboard copy failed:", error);
+
+      // Fallback for older browsers / permission issues
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = window.location.href;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textarea);
+
+        if (successful) {
+          toast.success("Link copied to clipboard!");
+          return;
+        }
+      } catch {
+        // ignore fallback errors
+      }
+
+      toast.error("Failed to copy link. Please copy it manually.");
+    }
   };
 
   const handlePlayAll = () => {
@@ -98,7 +126,10 @@ export default function PlaylistClient({ id }: { id: string }) {
         {/* Cover */}
         <div className="w-52 h-52 shrink-0 shadow-2xl rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center">
           {playlist.coverUrl ? (
-            <img src={playlist.coverUrl} className="w-full h-full object-cover" />
+            <img
+              src={playlist.coverUrl}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <Music size={64} className="text-white/20" />
           )}
@@ -106,7 +137,9 @@ export default function PlaylistClient({ id }: { id: string }) {
 
         {/* Info */}
         <div className="flex flex-col gap-4 w-full">
-          <span className="uppercase text-xs font-bold tracking-wider">Playlist</span>
+          <span className="uppercase text-xs font-bold tracking-wider">
+            Playlist
+          </span>
           <h1 className="text-5xl md:text-7xl font-bold font-aerosoldis tracking-wide">
             {playlist.name}
           </h1>
@@ -135,15 +168,15 @@ export default function PlaylistClient({ id }: { id: string }) {
 
       {/* Songs List */}
       <div className="flex flex-col">
-        {/* Header Row */}
         <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-4 px-4 py-2 border-b border-white/10 text-white/50 text-sm uppercase tracking-wider mb-2">
           <span className="w-8 text-center">#</span>
           <span>Title</span>
           <span className="hidden md:block">Artist</span>
-          <span className="flex justify-end"><Clock size={16} /></span>
+          <span className="flex justify-end">
+            <Clock size={16} />
+          </span>
         </div>
 
-        {/* Songs */}
         <div className="flex flex-col gap-1">
           {playlist.songs.map((song, index) => (
             <div
@@ -153,16 +186,28 @@ export default function PlaylistClient({ id }: { id: string }) {
             >
               <span className="w-8 text-center text-white/50 group-hover:text-white">
                 <span className="group-hover:hidden">{index + 1}</span>
-                <Play size={14} className="hidden group-hover:inline-block fill-white" />
+                <Play
+                  size={14}
+                  className="hidden group-hover:inline-block fill-white"
+                />
               </span>
 
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded bg-white/10 overflow-hidden shrink-0">
-                  {song.coverUrl && <img src={song.coverUrl} className="w-full h-full object-cover" />}
+                  {song.coverUrl && (
+                    <img
+                      src={song.coverUrl}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-medium text-white truncate max-w-[200px] md:max-w-md">{song.title}</span>
-                  <span className="md:hidden text-xs text-white/50">{song.artist}</span>
+                  <span className="font-medium text-white truncate max-w-[200px] md:max-w-md">
+                    {song.title}
+                  </span>
+                  <span className="md:hidden text-xs text-white/50">
+                    {song.artist}
+                  </span>
                 </div>
               </div>
 

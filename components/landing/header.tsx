@@ -122,7 +122,7 @@ export const Header = () => {
                       </Link>
                     </Button>
                     <Button asChild size="sm">
-                      <Link href="sign-up">
+                      <Link href="/sign-up">
                         <span>Sign Up</span>
                       </Link>
                     </Button>

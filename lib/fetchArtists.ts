@@ -10,13 +10,18 @@ export interface ArtistWithSongs {
 }
 
 export async function fetchArtists(): Promise<ArtistWithSongs[]> {
-    try {
-        const res = await fetch("/api/artists", { cache: "no-store" });
-        if (!res.ok) throw new Error("Failed to fetch artists");
-        const data = await res.json();
-        return data.artists;
-    } catch (error) {
-        console.error("Error fetching artists:", error);
-        return [];
+    const res = await fetch("/api/artists", { cache: "no-store" });
+
+    if (!res.ok) {
+        const message = `Failed to fetch artists (status ${res.status})`;
+        throw new Error(message);
     }
+
+    const data = await res.json();
+
+    if (!data?.artists || !Array.isArray(data.artists)) {
+        throw new Error("Invalid artists response shape");
+    }
+
+    return data.artists;
 }

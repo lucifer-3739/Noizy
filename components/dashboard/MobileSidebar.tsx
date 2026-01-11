@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { MusicSidebar } from "./DashboardSidebar";
 import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function MobileSidebar() {
     const [isOpen, setIsOpen] = useState(false);
+    const pathname = usePathname();
 
-    // Close sidebar when clicking outside or navigating
+    // Close sidebar on resize + route change
     useEffect(() => {
         const handleResize = () => {
             if (window.innerWidth >= 768) {
@@ -16,12 +18,19 @@ export default function MobileSidebar() {
         };
 
         window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
+
+        // 🔥 Close on route change
+        setIsOpen(false);
+
+        return () => {
+            window.removeEventListener("resize", handleResize);
+        };
+    }, [pathname]);
 
     if (!isOpen) {
         return (
             <button
+                type="button"
                 onClick={() => setIsOpen(true)}
                 className="md:hidden fixed top-4 left-4 z-50 p-2 bg-black/50 backdrop-blur-md rounded-full text-white border border-white/10"
             >
@@ -42,6 +51,7 @@ export default function MobileSidebar() {
             <div className="absolute top-0 left-0 bottom-0 w-64 bg-[#0a0a0a] border-r border-white/10 shadow-2xl animate-in slide-in-from-left duration-300">
                 <div className="absolute top-4 right-4 z-50">
                     <button
+                        type="button"
                         onClick={() => setIsOpen(false)}
                         className="p-1 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition"
                     >

@@ -14,9 +14,10 @@ export async function GET() {
         });
 
         // Transform data to ensure URLs are correct
-        const formattedData = artistsWithSongs.map((artist: any) => ({
-            ...artist,
-            songs: artist.songs.map((song: any) => {
+        const formattedData = artistsWithSongs.map((artist) => ({
+            id: artist.id,
+            name: artist.name,
+            songs: artist.songs.map((song) => {
                 // Handle cover URL same as song route
                 const cleanKey = song.coverUrl
                     ?.replace(/^https?:\/\/[^/]+\/[^/]+\//, "")

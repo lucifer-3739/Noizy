@@ -22,7 +22,6 @@ type RepeatMode = "none" | "one" | "all";
 type OverlayUI = "none" | "upload";
 
 interface MusicPlayerState {
-  // 🎵 Player
   currentSong: Song | null;
   isPlaying: boolean;
   playlist: Song[];
@@ -31,11 +30,9 @@ interface MusicPlayerState {
   shuffle: boolean;
   repeat: RepeatMode;
 
-  // ⏱ Timeline
   currentTime: number;
   duration: number;
 
-  // 🎮 Controls
   playSong: (song: Song, list?: Song[], startIndex?: number) => void;
   playAtIndex: (idx: number) => void;
   togglePlay: () => void;
@@ -46,33 +43,25 @@ interface MusicPlayerState {
   toggleShuffle: () => void;
   setRepeat: (r: RepeatMode) => void;
 
-  // 🧠 UI state
   ui: PlayerUI;
   openMiniPlayer: () => void;
   openFullPlayer: () => void;
   closeFullPlayer: () => void;
   hidePlayer: () => void;
 
-  // 📤 Upload overlay
   overlay: OverlayUI;
   openUpload: () => void;
   closeUpload: () => void;
 
-  // 📊 Audio analysis
   analyser: AnalyserNode | null;
 
-  // 🔄 Auto-refresh
   refreshTrigger: number;
   triggerRefresh: () => void;
 }
 
 const MusicPlayerContext = createContext<MusicPlayerState | null>(null);
 
-export function MusicPlayerProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function MusicPlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
 
@@ -89,13 +78,9 @@ export function MusicPlayerProvider({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // 📤 Upload controls
-  const openUpload = () => setOverlay("upload");
-  const closeUpload = () => setOverlay("none");
-
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // 🔄 State Ref to fix stale closures in event listeners
+  // 🔄 State ref for event listeners
   const stateRef = useRef({
     playlist,
     currentIndex,
@@ -127,33 +112,45 @@ export function MusicPlayerProvider({
     audio.onplay = () => setIsPlaying(true);
     audio.onpause = () => setIsPlaying(false);
 
-    audio.ontimeupdate = () => {
-      setCurrentTime(audio.currentTime);
-    };
+    audio.ontimeupdate = () => setCurrentTime(audio.currentTime);
+    audio.onloadedmetadata = () => setDuration(audio.duration || 0);
 
-    audio.onloadedmetadata = () => {
-      setDuration(audio.duration || 0);
-    };
-
+    // ✅ FIXED: correct repeat logic
     audio.onended = () => {
       const state = stateRef.current;
 
+      // 🔁 Repeat ONE
       if (state.repeat === "one") {
         audio.currentTime = 0;
-        audio.play();
+        audio.play().catch(() => { });
         return;
       }
 
-      if (state.playlist.length === 0) return;
+      if (!state.playlist.length) return;
 
-      const nextIndex = (state.currentIndex + 1) % state.playlist.length;
+      const nextIndex = state.currentIndex + 1;
+
+      // ⛔ End of playlist
+      if (nextIndex >= state.playlist.length) {
+        // 🔁 Repeat ALL
+        if (state.repeat === "all") {
+          const firstSong = state.playlist[0];
+          setCurrentIndex(0);
+          setCurrentSong(firstSong);
+
+          audio.src = firstSong.streamUrl;
+          audio.load();
+          audio.play().catch(() => { });
+        }
+        // 🚫 Repeat NONE → stop
+        return;
+      }
+
+      // ▶️ Normal next track
       const nextSong = state.playlist[nextIndex];
-
-      // Update React state
       setCurrentIndex(nextIndex);
       setCurrentSong(nextSong);
 
-      // Play next
       audio.src = nextSong.streamUrl;
       audio.load();
       audio.play().catch(() => { });
@@ -205,7 +202,7 @@ export function MusicPlayerProvider({
 
   const nextSong = () => {
     if (!playlist.length) return;
-    playAtIndex((currentIndex + 1) % playlist.length);
+    playAtIndex(currentIndex + 1);
   };
 
   const prevSong = () => {
@@ -214,7 +211,7 @@ export function MusicPlayerProvider({
       audio.currentTime = 0;
       return;
     }
-    playAtIndex((currentIndex - 1 + playlist.length) % playlist.length);
+    playAtIndex(currentIndex - 1);
   };
 
   const togglePlay = () => {
@@ -262,20 +259,17 @@ export function MusicPlayerProvider({
     closeFullPlayer: () => setUI("mini"),
     hidePlayer: () => {
       setUI("hidden");
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      audioRef.current?.pause();
     },
 
     overlay,
-    openUpload,
-    closeUpload,
+    openUpload: () => setOverlay("upload"),
+    closeUpload: () => setOverlay("none"),
 
     analyser: analyserRef.current,
 
-    // 🔄 Auto-refresh
     refreshTrigger,
-    triggerRefresh: () => setRefreshTrigger((prev) => prev + 1),
+    triggerRefresh: () => setRefreshTrigger((p) => p + 1),
   };
 
   return (

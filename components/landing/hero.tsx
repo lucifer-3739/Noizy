@@ -93,11 +93,12 @@ export function Hero() {
   }, []);
 
   const handlePlayHeroSong = () => {
-    if (currentSong?.id === randomSong?.id) {
+    if (!randomSong) return;
+    if (currentSong?.id === randomSong.id) {
       togglePlay();
-    } else if (randomSong) {
-      playSong(randomSong, songs);
+      return;
     }
+    playSong(randomSong, songs);
   };
 
   if (loading) {

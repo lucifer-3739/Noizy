@@ -1,5 +1,5 @@
 import { db } from "@/db/drizzle";
-import { songs, artists } from "@/db/schema";
+import { songs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
@@ -10,37 +10,44 @@ export async function GET(
     try {
         const { id } = await params;
         const numericId = Number(id);
-        if (isNaN(numericId)) {
+
+        if (Number.isNaN(numericId)) {
             return new NextResponse("Invalid ID", { status: 400 });
         }
 
-        const [song] = await db
-            .select()
-            .from(songs)
-            .where(eq(songs.id, numericId));
+        // ✅ Single query with relation
+        const song = await db.query.songs.findFirst({
+            where: eq(songs.id, numericId),
+            with: {
+                artist: true,
+            },
+        });
 
         if (!song) {
             return new NextResponse("Song not found", { status: 404 });
         }
 
-        const [artist] = await db
-            .select()
-            .from(artists)
-            .where(eq(artists.id, song.artistId));
+        // ✅ Safe coverUrl handling
+        const rawCoverUrl = song.coverUrl ?? "";
+        const cleanKey = rawCoverUrl
+            .replace(/^https?:\/\/[^/]+\/[^/]+\//, "")
+            .replace(/^\/+/, "");
 
-        // Process cover URL
-        // We expect the DB to possibly contain a full URL or a relative path or a MinIO key.
-        // The logic below attempts to extract the key if it looks like a full URL.
-        const cleanKey = song.coverUrl
-            ?.replace(/^https?:\/\/[^/]+\/[^/]+\//, "") // remove protocol + host + bucket/
-            .replace(/^\/+/, ""); // remove extra slashes
+        if (!song.artist) {
+            console.error(`Data integrity error: Song ${numericId} references non-existent artist ${song.artistId}`);
+            return new NextResponse("Internal Server Error: Invalid artist reference", { status: 500 });
+        }
 
         const responseData = {
             id: song.id,
             title: song.title,
-            artist: artist?.name || "Unknown Artist",
-            cover: cleanKey ? `/api/covers/${encodeURIComponent(cleanKey)}` : null,
-            coverUrl: cleanKey ? `/api/covers/${encodeURIComponent(cleanKey)}` : null,
+            artist: song.artist.name,
+            cover: cleanKey
+                ? `/api/covers/${encodeURIComponent(cleanKey)}`
+                : null,
+            coverUrl: cleanKey
+                ? `/api/covers/${encodeURIComponent(cleanKey)}`
+                : null,
             streamUrl: `/api/songs/${song.id}/stream`,
             durationSec: song.duration,
         };

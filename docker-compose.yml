@@ -5,10 +5,12 @@ services:
     image: postgres:16-alpine
     container_name: musicapp-db
     restart: always
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Saurabh@9087
-      POSTGRES_DB: musicapp
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -25,13 +27,15 @@ services:
     image: minio/minio:latest
     container_name: musicapp-minio
     restart: always
+    env_file:
+      - .env
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: admin123
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000" # API endpoint
-      - "9001:9001" # Web console
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
     networks:
@@ -57,19 +61,8 @@ services:
     restart: always
     ports:
       - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:Saurabh@9087@db:5432/musicapp
-      - BETTER_AUTH_SECRET=changeme_in_production
-      - BETTER_AUTH_URL=http://localhost:3000
-      - NEXT_PUBLIC_URL=http://localhost:3000
-
-      # MinIO / Storage
-      - MINIO_ENDPOINT=minio
-      - MINIO_PORT=9000
-      - MINIO_ACCESS_KEY=admin
-      - MINIO_SECRET_KEY=admin123
-      - MINIO_BUCKET=music-covers
-      - MINIO_USE_SSL=false
+    env_file:
+      - .env
     depends_on:
       - db
       - minio
