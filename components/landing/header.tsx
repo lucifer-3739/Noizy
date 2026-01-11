@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useScroll } from "motion/react";
 import Image from "next/image";
 import { ModeSwitcher } from "../theme/modeSwitch";
+import { authClient } from "@/lib/auth-client";
 
 const menuItems = [
   { name: "Features", href: "#features" },
@@ -18,6 +19,7 @@ export const Header = () => {
   const [menuState, setMenuState] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
   const { scrollYProgress } = useScroll();
+  const session = authClient.useSession();
 
   React.useEffect(() => {
     const unsubscribe = scrollYProgress.on("change", (latest: number) => {
@@ -106,16 +108,26 @@ export const Header = () => {
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
                 <ModeSwitcher />
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/login">
-                    <span>Login</span>
-                  </Link>
-                </Button>
-                <Button asChild size="sm">
-                  <Link href="sign-up">
-                    <span>Sign Up</span>
-                  </Link>
-                </Button>
+                {session?.data ? (
+                  <Button asChild size="sm">
+                    <Link href="/dashboard">
+                      <span>Dashboard</span>
+                    </Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/login">
+                        <span>Login</span>
+                      </Link>
+                    </Button>
+                    <Button asChild size="sm">
+                      <Link href="sign-up">
+                        <span>Sign Up</span>
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

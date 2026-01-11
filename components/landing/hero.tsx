@@ -9,12 +9,64 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
+  Loader2,
 } from "lucide-react";
+import { fetchSongs } from "@/lib/fetchSongs";
+import { useMusicPlayer } from "@/components/dashboard/songsplayer/MusicPlayerContext";
 import LaserFlow from "../LaserFlow";
 
 export function Hero() {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const [songs, setSongs] = useState<any[]>([]);
+  const [randomSong, setRandomSong] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const { playSong, isPlaying, currentSong, togglePlay, currentTime, duration } = useMusicPlayer();
+
+  // Calculate playback state
+  const isRandomSongPlaying = isPlaying && currentSong?.id === randomSong?.id;
+
+  // Progress calculation
+  const progress = isRandomSongPlaying && duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  const formatTime = (time: number) => {
+    if (isNaN(time)) return "0:00";
+    const m = Math.floor(time / 60);
+    const s = Math.floor(time % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  // Get next 3 songs for the queue
+  const getQueue = () => {
+    if (songs.length === 0 || !randomSong) return [];
+    const currentIndex = songs.findIndex((s) => s.id === randomSong.id);
+    if (currentIndex === -1) return [];
+
+    // Get next 3 songs wrapping around
+    return [1, 2, 3].map((offset) => songs[(currentIndex + offset) % songs.length]);
+  };
+
+  const queueSongs = getQueue();
+
+  useEffect(() => {
+    const loadSongs = async () => {
+      try {
+        const allSongs = await fetchSongs();
+        setSongs(allSongs);
+        if (allSongs.length > 0) {
+          const random = allSongs[Math.floor(Math.random() * allSongs.length)];
+          setRandomSong(random);
+        }
+      } catch (error) {
+        console.error("Failed to load songs", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSongs();
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -39,6 +91,28 @@ export function Hero() {
       };
     }
   }, []);
+
+  const handlePlayHeroSong = () => {
+    if (currentSong?.id === randomSong?.id) {
+      togglePlay();
+    } else if (randomSong) {
+      playSong(randomSong, songs);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-white dark:bg-black relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <LaserFlow horizontalBeamOffset={0.1} verticalBeamOffset={-0.07} color="#7C3AED" />
+        </div>
+        <div className="z-10 flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+          <p className="text-zinc-500 animate-pulse">Loading experience...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section className="relative overflow-hidden h-screen flex flex-col w-screen justify-center">
@@ -121,25 +195,28 @@ export function Hero() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="flex items-start gap-4">
               <img
-                src="https://i.scdn.co/image/ab67616d00001e02711c1639b4bc0f9978ae77a6"
-                alt="Album cover"
+                src={randomSong?.coverUrl || "https://placehold.co/400x400"}
+                alt={randomSong?.title || "Album Cover"}
                 className="h-24 w-24 rounded-xl object-cover border border-zinc-200 dark:border-zinc-800 shadow-md"
               />
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-semibold tracking-tight">
-                  Sanam Teri Kasam
+                  {randomSong?.title || "Loading..."}
                 </h3>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Himesh Reshammiya
+                  {randomSong?.artist || "Wait for it..."}
                 </p>
                 {/* Progress bar */}
                 <div className="mt-3">
                   <div className="h-1.5 w-full rounded-full bg-zinc-200/70 dark:bg-zinc-800/70 overflow-hidden">
-                    <div className="h-full w-2/3 bg-indigo-500 rounded-full"></div>
+                    <div
+                      className="h-full bg-indigo-500 rounded-full transition-all duration-100 ease-linear"
+                      style={{ width: `${progress}%` }}
+                    ></div>
                   </div>
                   <div className="mt-1.5 flex justify-between text-[11px] text-zinc-500 dark:text-zinc-400">
-                    <span>01:24</span>
-                    <span>05:14</span>
+                    <span>{isRandomSongPlaying ? formatTime(currentTime) : "0:00"}</span>
+                    <span>{randomSong?.duration ? formatTime(randomSong.duration) : "--:--"}</span>
                   </div>
                 </div>
               </div>
@@ -151,8 +228,11 @@ export function Hero() {
                 <button className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-white/50 dark:hover:bg-zinc-800/50 backdrop-blur transition">
                   <SkipBack className="h-4 w-4" />
                 </button>
-                <button className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-600/30 hover:bg-indigo-500 transition">
-                  <Play className="h-5 w-5" />
+                <button
+                  onClick={handlePlayHeroSong}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-600/30 hover:bg-indigo-500 transition"
+                >
+                  {isRandomSongPlaying ? <div className="h-3 w-3 bg-white rounded-sm" /> : <Play className="h-5 w-5" />}
                 </button>
                 <button className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-white/50 dark:hover:bg-zinc-800/50 backdrop-blur transition">
                   <SkipForward className="h-4 w-4" />
@@ -168,19 +248,16 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Mini queue */}
+          {/* Mini queue - Dynamic */}
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { title: "Neon Bloom", artist: "Kyra Wave", img: "neon-bloom" },
-              { title: "Glass Hearts", artist: "Clyde Z", img: "glass-hearts" },
-              { title: "Satellite", artist: "Ari Nova", img: "satellite" },
-            ].map((track) => (
+            {queueSongs.map((track) => (
               <div
-                key={track.title}
-                className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-800 p-2 hover:bg-white/50 dark:hover:bg-zinc-900/50 backdrop-blur transition"
+                key={track.id}
+                onClick={() => playSong(track, songs)}
+                className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-800 p-2 hover:bg-white/50 dark:hover:bg-zinc-900/50 backdrop-blur transition cursor-pointer"
               >
                 <img
-                  src={`/tracks/${track.img}.jpg`}
+                  src={track.coverUrl || "https://placehold.co/100x100"}
                   alt={track.title}
                   className="h-10 w-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-800"
                 />
@@ -192,16 +269,21 @@ export function Hero() {
                 </div>
               </div>
             ))}
+            {queueSongs.length === 0 && (
+              <div className="col-span-3 text-center text-xs text-zinc-500 py-2">
+                Add more songs to see them in queue!
+              </div>
+            )}
           </div>
         </div>
 
         {/* Floating badge */}
-        {/* <div className="hidden sm:flex absolute -top-4 right-8 items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/50 backdrop-blur px-3 py-2 shadow-sm">
+        <div className="hidden sm:flex absolute -top-4 right-8 items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/50 backdrop-blur px-3 py-2 shadow-sm">
           <Sparkles className="h-4 w-4 text-indigo-500" />
           <span className="text-xs text-zinc-700 dark:text-zinc-300">
             Spatial Mix enabled
           </span>
-        </div> */}
+        </div>
       </div>
     </section>
   );

@@ -13,7 +13,7 @@ import { useRef, useState } from "react";
 import { useMusicPlayer } from "./MusicPlayerContext";
 
 export default function UploadSongPlayer() {
-  const { overlay, closeUpload } = useMusicPlayer();
+  const { overlay, closeUpload, triggerRefresh } = useMusicPlayer();
 
   const audioInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +80,7 @@ export default function UploadSongPlayer() {
 
       // ✅ success
       closeUpload();
+      triggerRefresh();
 
       // (optional later)
       // addSongToPlaylist(data.song)
@@ -206,10 +207,9 @@ export default function UploadSongPlayer() {
             whileTap={ready && !loading ? { scale: 0.95 } : {}}
             className={`
               px-6 h-12 rounded-full flex items-center gap-2 font-semibold
-              ${
-                ready && !loading
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-white/10 cursor-not-allowed"
+              ${ready && !loading
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "bg-white/10 cursor-not-allowed"
               }
             `}
           >
