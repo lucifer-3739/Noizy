@@ -19,8 +19,8 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="w-full h-full flex flex-col items-center">
-      <div className="relative w-full h-[380px] flex flex-col justify-center items-center overflow-hidden">
+    <div className="w-full h-full relative flex flex-col items-center overflow-x-hidden">
+      <div className="relative w-full h-[380px] flex flex-col justify-center items-center overflow-hidden shrink-0">
         <div
           className="absolute inset-0 -z-10 transition-all duration-100 ease-out"
           style={{
@@ -29,11 +29,11 @@ export default function DashboardPage() {
         >
           <HomepageBackground />
         </div>
-        <h1 className="text-white font-lemon text-9xl sm:text-12xl font-extrabold tracking-widest">
+        <h1 className="relative z-10 text-white font-aerosoldis text-5xl sm:text-7xl md:text-9xl font-extrabold tracking-widest text-center px-4">
           AUDIOWAVE
         </h1>
 
-        <p className="text-white/80 font-caveat italic text-5xl sm:text-6xl mt-2">
+        <p className="relative z-10 text-white/80 font-caveat italic text-2xl sm:text-4xl mt-2 text-center px-4">
           YOUR SOUNDTRACK TO NOW
         </p>
       </div>

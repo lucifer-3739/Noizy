@@ -14,7 +14,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -30,8 +30,8 @@ services:
       MINIO_ROOT_PASSWORD: admin123
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"  # API endpoint
-      - "9001:9001"  # Web console
+      - "9000:9000" # API endpoint
+      - "9001:9001" # Web console
     volumes:
       - minio_data:/data
     networks:
@@ -48,6 +48,31 @@ services:
       - "5050:80"
     depends_on:
       - db
+    networks:
+      - musicnet
+
+  web:
+    build: .
+    container_name: musicapp-web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:Saurabh@9087@db:5432/musicapp
+      - BETTER_AUTH_SECRET=changeme_in_production
+      - BETTER_AUTH_URL=http://localhost:3000
+      - NEXT_PUBLIC_URL=http://localhost:3000
+
+      # MinIO / Storage
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=admin123
+      - MINIO_BUCKET=music-covers
+      - MINIO_USE_SSL=false
+    depends_on:
+      - db
+      - minio
     networks:
       - musicnet
 

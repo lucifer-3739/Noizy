@@ -24,8 +24,8 @@ import { useMusicPlayer } from "./songsplayer/MusicPlayerContext";
 interface MenuItem {
   id: string;
   label: string;
-  icon: "home" | "search" | "artists" | "podcast" | "upload";
-  path?: string; // 👈 OPTIONAL
+  icon: "home" | "search" | "artists" | "upload";
+  path?: string;
 }
 
 const iconMap = {
@@ -36,7 +36,9 @@ const iconMap = {
   podcast: Mic,
 };
 
-export function MusicSidebar() {
+import { cn } from "@/lib/utils";
+
+export function MusicSidebar({ className }: { className?: string }) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,12 +61,12 @@ export function MusicSidebar() {
         icon: "artists",
         path: "/dashboard/artists",
       },
-      {
-        id: "5",
-        label: "Podcast",
-        icon: "podcast",
-        path: "/dashboard/podcast",
-      },
+      // {
+      //   id: "5",
+      //   label: "Podcast",
+      //   icon: "podcast",
+      //   path: "/dashboard/podcast",
+      // },
     ]);
 
     const loadPlaylists = async () => {
@@ -86,7 +88,7 @@ export function MusicSidebar() {
   }, []);
 
   return (
-    <aside className="w-64 bg-[#0a0a0a] text-white border-r border-gray-800 flex flex-col h-screen">
+    <aside className={cn("w-64 bg-[#0a0a0a] text-white border-r border-gray-800 flex flex-col h-full", className)}>
       {/* Header */}
       <div className="p-6 flex items-center justify-between">
         <h1 className="text-xl font-bold">

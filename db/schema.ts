@@ -181,4 +181,8 @@ export const schema = {
   playlists,
   playlistItems,
   UploadSchema,
+  artistsRelations,
+  songsRelations,
+  playlistsRelations,
+  playlistItemsRelations,
 };

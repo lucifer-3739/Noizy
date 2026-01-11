@@ -54,10 +54,10 @@ export async function POST(req: Request) {
         playlistId,
         songId,
         position: sql`(
-+          SELECT COALESCE(MAX(position), 0) + 1
-+          FROM ${playlistItems}
-+          WHERE ${playlistItems.playlistId} = ${playlistId}
-+        )`,
+          SELECT COALESCE(MAX(position), 0) + 1
+          FROM ${playlistItems}
+          WHERE ${playlistItems.playlistId} = ${playlistId}
+        )`,
       })
       .returning();
 

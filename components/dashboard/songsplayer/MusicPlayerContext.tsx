@@ -60,6 +60,10 @@ interface MusicPlayerState {
 
   // 📊 Audio analysis
   analyser: AnalyserNode | null;
+
+  // 🔄 Auto-refresh
+  refreshTrigger: number;
+  triggerRefresh: () => void;
 }
 
 const MusicPlayerContext = createContext<MusicPlayerState | null>(null);
@@ -89,6 +93,23 @@ export function MusicPlayerProvider({
   const openUpload = () => setOverlay("upload");
   const closeUpload = () => setOverlay("none");
 
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // 🔄 State Ref to fix stale closures in event listeners
+  const stateRef = useRef({
+    playlist,
+    currentIndex,
+    repeat,
+  });
+
+  useEffect(() => {
+    stateRef.current = {
+      playlist,
+      currentIndex,
+      repeat,
+    };
+  }, [playlist, currentIndex, repeat]);
+
   useEffect(() => {
     const audio = document.createElement("audio");
     audio.preload = "metadata";
@@ -115,12 +136,27 @@ export function MusicPlayerProvider({
     };
 
     audio.onended = () => {
-      if (repeat === "one") {
+      const state = stateRef.current;
+
+      if (state.repeat === "one") {
         audio.currentTime = 0;
         audio.play();
         return;
       }
-      nextSong();
+
+      if (state.playlist.length === 0) return;
+
+      const nextIndex = (state.currentIndex + 1) % state.playlist.length;
+      const nextSong = state.playlist[nextIndex];
+
+      // Update React state
+      setCurrentIndex(nextIndex);
+      setCurrentSong(nextSong);
+
+      // Play next
+      audio.src = nextSong.streamUrl;
+      audio.load();
+      audio.play().catch(() => { });
     };
 
     audioRef.current = audio;
@@ -132,7 +168,7 @@ export function MusicPlayerProvider({
       ctx.close();
       audio.remove();
     };
-  }, [repeat]);
+  }, []);
 
   const loadAndPlay = async (song: Song) => {
     const audio = audioRef.current;
@@ -143,7 +179,7 @@ export function MusicPlayerProvider({
     audio.load();
     try {
       await audio.play();
-    } catch {}
+    } catch { }
   };
 
   const playSong = (song: Song, list?: Song[], startIndex?: number) => {
@@ -224,13 +260,22 @@ export function MusicPlayerProvider({
     openMiniPlayer: () => setUI("mini"),
     openFullPlayer: () => setUI("full"),
     closeFullPlayer: () => setUI("mini"),
-    hidePlayer: () => setUI("hidden"),
+    hidePlayer: () => {
+      setUI("hidden");
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    },
 
     overlay,
     openUpload,
     closeUpload,
 
     analyser: analyserRef.current,
+
+    // 🔄 Auto-refresh
+    refreshTrigger,
+    triggerRefresh: () => setRefreshTrigger((prev) => prev + 1),
   };
 
   return (
