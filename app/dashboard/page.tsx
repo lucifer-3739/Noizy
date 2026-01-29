@@ -29,7 +29,7 @@ export default function DashboardPage() {
         >
           <HomepageBackground />
         </div>
-        <h1 className="relative z-10 text-white font-aerosoldis text-5xl sm:text-7xl md:text-9xl font-extrabold tracking-widest text-center px-4">
+        <h1 className="relative z-10 text-white font-fontAerosoldis text-5xl sm:text-7xl md:text-9xl font-extrabold tracking-widest text-center px-4">
           AUDIOWAVE
         </h1>
 

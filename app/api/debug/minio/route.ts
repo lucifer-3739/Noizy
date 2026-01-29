@@ -14,7 +14,7 @@ export async function GET() {
   const files: string[] = [];
   const stream = minioClient.listObjects(bucket, "", true);
 
-  return new Promise((resolve) => {
+  return new Promise<NextResponse>((resolve) => {
     stream.on("data", (obj) => {
       if (typeof obj.name === "string") {
         files.push(obj.name);

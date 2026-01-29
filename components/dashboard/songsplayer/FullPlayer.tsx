@@ -13,6 +13,7 @@ import {
   Shuffle,
   Volume,
 } from "lucide-react";
+import Image from "next/image";
 
 export default function FullPlayer() {
   const {
@@ -78,12 +79,14 @@ export default function FullPlayer() {
 
         {/* Header */}
         <div className="flex items-center gap-4">
-          <div className="w-24 h-24 rounded-xl overflow-hidden bg-white/8">
+          <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-white/8">
             {currentSong.coverUrl ? (
-              <img
+              <Image
                 src={currentSong.coverUrl}
                 alt={currentSong.title}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="96px"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -161,17 +164,18 @@ export default function FullPlayer() {
               {playlist.map((s, i) => (
                 <div
                   key={s.id}
-                  className={`flex items-center justify-between p-2 rounded-md ${
-                    i === currentIndex ? "bg-white/10" : "bg-white/4"
-                  }`}
+                  className={`flex items-center justify-between p-2 rounded-md ${i === currentIndex ? "bg-white/10" : "bg-white/4"
+                    }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-md overflow-hidden bg-white/6">
+                    <div className="relative w-10 h-10 rounded-md overflow-hidden bg-white/6 shrink-0">
                       {s.coverUrl ? (
-                        <img
+                        <Image
                           src={s.coverUrl}
                           alt={s.title}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          sizes="40px"
                         />
                       ) : (
                         <div className="flex items-center justify-center">

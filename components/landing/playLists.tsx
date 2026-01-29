@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Wand2 } from "lucide-react";
+import Image from "next/image";
 
 const playlists = [
   {
@@ -97,18 +98,21 @@ export function Playlists() {
               className="group relative rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition shadow-lg shadow-black/10"
               style={{
                 perspective: "1200px",
-                transform: `rotateX(${tilts[index]?.x || 0}deg) rotateY(${
-                  tilts[index]?.y || 0
-                }deg)`,
+                transform: `rotateX(${tilts[index]?.x || 0}deg) rotateY(${tilts[index]?.y || 0
+                  }deg)`,
                 transformStyle: "preserve-3d",
                 transitionDuration: "300ms",
               }}
             >
-              <img
-                src={`${playlist.img}`}
-                alt={`Playlist - ${playlist.title}`}
-                className="h-48 w-full object-cover transition group-hover:scale-[1.02]"
-              />
+              <div className="relative h-48 w-full">
+                <Image
+                  src={`${playlist.img}`}
+                  alt={`Playlist - ${playlist.title}`}
+                  fill
+                  className="object-cover transition group-hover:scale-[1.02]"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                />
+              </div>
               <div className="absolute inset-0 bg-linear-to-t from-zinc-950/70 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-3">
                 <h3 className="text-base font-semibold tracking-tight">

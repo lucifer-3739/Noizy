@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 import { fetchSongs } from "@/lib/fetchSongs";
 import { useMusicPlayer } from "@/components/dashboard/songsplayer/MusicPlayerContext";
-import LaserFlow from "../LaserFlow";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+
+const LaserFlow = dynamic(() => import("../LaserFlow"), { ssr: false });
 
 export function Hero() {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -194,11 +197,15 @@ export function Hero() {
           {/* Player top */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="flex items-start gap-4">
-              <img
-                src={randomSong?.coverUrl || "https://placehold.co/400x400"}
-                alt={randomSong?.title || "Album Cover"}
-                className="h-24 w-24 rounded-xl object-cover border border-zinc-200 dark:border-zinc-800 shadow-md"
-              />
+              <div className="relative h-24 w-24 shrink-0 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-md">
+                <Image
+                  src={randomSong?.coverUrl || "https://placehold.co/400x400"}
+                  alt={randomSong?.title || "Album Cover"}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 96px, 96px"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-semibold tracking-tight">
                   {randomSong?.title || "Loading..."}
@@ -256,11 +263,15 @@ export function Hero() {
                 onClick={() => playSong(track, songs)}
                 className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-800 p-2 hover:bg-white/50 dark:hover:bg-zinc-900/50 backdrop-blur transition cursor-pointer"
               >
-                <img
-                  src={track.coverUrl || "https://placehold.co/100x100"}
-                  alt={track.title}
-                  className="h-10 w-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-800"
-                />
+                <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800">
+                  <Image
+                    src={track.coverUrl || "https://placehold.co/100x100"}
+                    alt={track.title}
+                    fill
+                    className="object-cover"
+                    sizes="40px"
+                  />
+                </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{track.title}</p>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">

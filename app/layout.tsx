@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Lemon, Caveat } from "next/font/google";
+import { Caveat, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -10,20 +10,9 @@ import FullPlayer from "@/components/dashboard/songsplayer/FullPlayer";
 import { MusicPlayerProvider } from "@/components/dashboard/songsplayer/MusicPlayerContext";
 import UploadSongOverlay from "@/components/dashboard/songsplayer/UploadSongPlayer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
+const jetBrainMono = JetBrains_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
-
-const lemon = Lemon({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-lemon",
 });
 
 const caveat = Caveat({
@@ -46,8 +35,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          `${geistSans.variable} ${geistMono.variable} ${lemon.variable} ${caveat.variable} antialiased`,
-          fontAerosoldis.variable
+          `${jetBrainMono.variable} ${caveat.variable} antialiased`,
+          fontAerosoldis.variable,
         )}
       >
         <ThemeProvider

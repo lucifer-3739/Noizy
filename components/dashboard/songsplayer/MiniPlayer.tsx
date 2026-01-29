@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, X } from "lucide-react";
+import Image from "next/image";
 import { useMusicPlayer } from "./MusicPlayerContext";
 
 export default function MiniPlayer() {
@@ -32,12 +33,14 @@ export default function MiniPlayer() {
       <div className="absolute inset-0 bg-white/20 dark:bg-black/30 backdrop-blur-xl border border-white/30 dark:border-white/10" />
 
       <div className="relative h-full flex items-center px-3 gap-3">
-        <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/10 shrink-0">
+        <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-white/10 shrink-0">
           {currentSong.coverUrl ? (
-            <img
+            <Image
               src={currentSong.coverUrl}
               alt={currentSong.title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="40px"
             />
           ) : (
             <div className="w-full h-full bg-linear-to-br from-blue-400 to-blue-600 animate-pulse" />

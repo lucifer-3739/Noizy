@@ -56,7 +56,7 @@ export default function UploadDialog({
       setBusy(true);
       // ⏱️ Calculate audio duration before upload
       const durationSec = await secondsFromFile(audio);
-           // Validate with schema
+      // Validate with schema
       const validation = UploadSchema.safeParse({
         title,
         artist,
@@ -67,11 +67,11 @@ export default function UploadDialog({
       });
 
       if (!validation.success) {
-        toast.error(validation.error.errors[0].message);
+        toast.error(validation.error.issues[0].message);
         return;
       }
 
-     fd.append("duration", durationSec.toString());
+      fd.append("duration", durationSec.toString());
 
       // ✅ Upload to /api/upload (single request with files)
       const res = await fetch("/api/upload", {
